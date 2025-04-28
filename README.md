@@ -1,4 +1,4 @@
-# -Codificación-de-Huffman
+# Codificación de Huffman
 
 # Principios de Sistemas Operativos
 # Proyecto 1
