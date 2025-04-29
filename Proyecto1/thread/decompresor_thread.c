@@ -221,11 +221,10 @@ int obtener_numero_hilos_max() {
 
 int main(int argc, char *argv[]) {
     // Variables para medir el tiempo de ejecución
-    struct timeval start, end;
-    
-    // Se obtiene el tiempo de inicio de la ejecución
-    gettimeofday(&start, NULL);
+    struct timespec inicio, fin;
+    clock_gettime(CLOCK_MONOTONIC, &inicio);
 
+   
     // Verificar que se haya pasado el número correcto de argumentos
     if (argc != 2) return 1;  // Si no se pasa el archivo .meta como argumento, termina el programa con código de error 1
 
@@ -296,12 +295,17 @@ int main(int argc, char *argv[]) {
     // Liberar la memoria utilizada para los archivos
     free(archivos);
 
-    // Obtener el tiempo de fin de la ejecución
-    gettimeofday(&end, NULL);
-    
-    // Calcular el tiempo total de ejecución en milisegundos
-    double tiempo = (end.tv_sec - start.tv_sec) * 1000.0 + (end.tv_usec - start.tv_usec) / 1000.0;
-    printf("La ejecución duró: %f milisegundos\n", tiempo);
+   
+
+    clock_gettime(CLOCK_MONOTONIC, &fin);
+
+    // Calcular la diferencia en nanosegundos
+    long segundos = fin.tv_sec - inicio.tv_sec;
+    long nanosegundos = fin.tv_nsec - inicio.tv_nsec;
+    long long tiempo_total_ns = segundos * 1000000000LL + nanosegundos;
+    double tiempo_total_ms = tiempo_total_ns / 1e6;
+
+    printf("Tiempo tardado: %lld nanosegundos (%.3f milisegundos)\n", tiempo_total_ns, tiempo_total_ms);
 
     return 0;  // Retornar 0 al finalizar correctamente
 }

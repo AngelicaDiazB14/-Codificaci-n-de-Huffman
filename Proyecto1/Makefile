@@ -33,5 +33,5 @@ threads_dec: thread/decompresor_thread.c
 # Clean up compiled programs
 clean:
 	rm -f serial/compresor_serial serial/decompresor_serial \
-		forks/compresor_fork forks/decompresor_fork \
-		threads/compresor_thread threads/decompresor_thread
+		fork/compresor_fork fork/decompresor_fork \
+		thread/compresor_thread thread/decompresor_thread

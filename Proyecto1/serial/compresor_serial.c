@@ -345,22 +345,24 @@ int main(int argc, char *argv[])
         fprintf(stderr, "El directorio no tiene archivos. %s\n", ruta_directorio);
         exit(1);
     }
-    struct timeval inicio, fin;
+    
 
-    printf("\nCompresión iniciada por favor espere... \n");
+    
 
-    gettimeofday(&inicio, NULL);
+    struct timespec inicio, fin;
+    clock_gettime(CLOCK_MONOTONIC, &inicio);
 
     comprimir_directorio(ruta_directorio_limpia);
 
-    gettimeofday(&fin, NULL);
+    clock_gettime(CLOCK_MONOTONIC, &fin);
+
+    
     long segundos = fin.tv_sec - inicio.tv_sec;
-    long microsundos = fin.tv_usec - inicio.tv_usec;
-    double tiempo_tardado = segundos * 1000.0 + microsundos / 1000.0; // en milisegundos
+    long nanosegundos = fin.tv_nsec - inicio.tv_nsec;
+    long long tiempo_total_ns = segundos * 1000000000LL + nanosegundos;
+    double tiempo_total_ms = tiempo_total_ns / 1e6;
 
-    printf("La ejecución duró %f milisegundos\n", tiempo_tardado);
-
-    // Falta ordenar los archivos por orden alfabetico
+    printf("Tiempo tardado: %lld nanosegundos (%.3f milisegundos)\n", tiempo_total_ns, tiempo_total_ms);
 
     return 0;
 }
