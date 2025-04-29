@@ -21,49 +21,7 @@ typedef struct
     unsigned char bits_finales;
 } MetaArchivo;
 
-int leer_meta(const char *archivo_meta, MetaArchivo **out_archivos, int *num_archivos)
-{
-    FILE *f = fopen(archivo_meta, "r");
-    if (!f)
-    {
-        perror("No se pudo abrir el archivo .meta");
-        return 0;
-    }
-
-    char linea[MAX_LINEA];
-    int leyendo_codigos = 1;
-
-    MetaArchivo *archivos = NULL;
-    int total_archivos = 0;
-
-    while (fgets(linea, MAX_LINEA, f))
-    {
-        if (strcmp(linea, "---\n") == 0)
-        {
-            leyendo_codigos = 0;
-            continue;
-        }
-
-        if (!leyendo_codigos)
-        {
-            archivos = realloc(archivos, (total_archivos + 1) * sizeof(MetaArchivo));
-            char *token = strtok(linea, ",");
-            strcpy(archivos[total_archivos].nombre, token);
-            token = strtok(NULL, ",");
-            archivos[total_archivos].tam_comprimido = atoi(token);
-            token = strtok(NULL, "\n");
-            archivos[total_archivos].bits_finales = atoi(token);
-            total_archivos++;
-        }
-    }
-
-    fclose(f);
-
-    *out_archivos = archivos;
-    *num_archivos = total_archivos;
-    return 1;
-}
-
+//Leer meta y tabla de codigos desde el final de un archivo .huff
 int leer_meta_y_tabla(const char *archivo_meta, Codigo **out_codigos, int *num_codigos, MetaArchivo **out_archivos, int *num_archivos)
 {
     FILE *f = fopen(archivo_meta, "rb");
@@ -141,7 +99,8 @@ int leer_meta_y_tabla(const char *archivo_meta, Codigo **out_codigos, int *num_c
     *num_archivos = total_archivos;
     return 1;
 }
-
+//A partir de un .huff leer solo la tabla de códigos
+//Se utiliza en las descompresiones de hijos, dado que ellos no ocupan el meta de los demas archivos.
 int leer_solo_tabla(const char *archivo_meta, Codigo **out_codigos, int *num_codigos)
 {
     FILE *f = fopen(archivo_meta, "rb");
@@ -192,7 +151,7 @@ int leer_solo_tabla(const char *archivo_meta, Codigo **out_codigos, int *num_cod
 
     return 1;
 }
-
+//Función que utilizan los hijos para descomprimir un archivo. Ocupan el offset de donde descomprimir y la matadata del archivo.
 void descomprimir_archivo_hijo(char directorio_salida[300], const char *archivo_huff, MetaArchivo *meta, long offset)
 {
     // la tabla
@@ -391,8 +350,5 @@ int main(int argc, char *argv[])
 
     return 0;
 
-    // Cambiar mallocs a callocs. Cambiar [i].propiedad a arreglo->propiedad
-    // Limpieza
-    // refactorizacion
-    // Crear .h .c .maker
+
 }

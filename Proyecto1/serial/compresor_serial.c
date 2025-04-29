@@ -288,7 +288,7 @@ void comprimir_directorio(const char *ruta_directorio)
 
     annadir_metadata_al_huff(nombre_archivo_huff, rutas, num_rutas, metadatos, total_archivos);
 
-    // Opcional Limpiar la metadata y las rutas. Dado que el programa termina aca mismo, no hace falta.
+    
 }
 
 int main(int argc, char *argv[])

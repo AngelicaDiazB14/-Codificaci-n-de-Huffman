@@ -53,7 +53,7 @@ Codigo *procesarCodigos(char **codigos, int num_codigos)
 
     return codigoEstructura;
 }
-
+//De un archivo .huff, obtener la tabla y la metadata. Leyendo el final del archivo
 int leer_meta_y_tabla(const char *archivo_meta, Codigo **out_codigos, int *num_codigos, MetaArchivo **out_archivos, int *num_archivos)
 {
     FILE *f = fopen(archivo_meta, "rb");

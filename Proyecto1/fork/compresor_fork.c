@@ -125,7 +125,7 @@ void guardarArchivoComprimido(const char *nombreArchivo, Ruta *rutas, int num_ru
     fclose(archivoOriginal);
     fclose(archivoComprimido);
 }
-// 🔧 NUEVA FUNCIÓN: comprimir un archivo usando rutas Huffman y guardar en un archivo general
+// comprimir un archivo usando rutas Huffman y guardar en un archivo general
 unsigned int comprimir_archivo_y_guardar(FILE *salida, const char *ruta_archivo, char *codigos[256], unsigned char *bits_finales)
 {
     FILE *entrada = fopen(ruta_archivo, "rb");
@@ -173,7 +173,8 @@ unsigned int comprimir_archivo_y_guardar(FILE *salida, const char *ruta_archivo,
     fclose(entrada);
     return bytes_escritos;
 }
-
+//Función utilizada por los hijos para comprimir un archivo
+//Comprime el archivo y le devuelve al padre la metadata
 void comprimir_hijo(const char *ruta_archivo_entrada, int pipe_fd, int *frecuencias)
 {
     // Leer las frecuencias
@@ -272,6 +273,7 @@ void comprimir_hijo(const char *ruta_archivo_entrada, int pipe_fd, int *frecuenc
 
     exit(0);
 }
+//Cuenta las apariciones de un byte en un archivo 
 void contar_frecuencias(FILE *file, int frecuencias[256])
 {
 
@@ -287,6 +289,7 @@ void contar_frecuencias(FILE *file, int frecuencias[256])
         frecuencias[byte]++;
     }
 }
+//Cuenta las apariciones de un byte en todos los archivos de un directorio
 void contar_frecuencias_en_directorio(const char *ruta_directorio, int *frecuencias)
 {
     // Inicializar frecuencias globales
@@ -374,6 +377,8 @@ void contar_frecuencias_en_directorio(const char *ruta_directorio, int *frecuenc
     while (wait(NULL) > 0)
         ;
 }
+
+//Une todos los archivos que terminen en .huff, que se encuentren en el arreglo de metadatas
 void unir_huffs(char archivo_huff[MAX_RUTA], MetaArchivo *metadatos, int cantidad_archivos)
 {
     FILE *archivo_salida = fopen(archivo_huff, "wb");
@@ -413,12 +418,10 @@ void unir_huffs(char archivo_huff[MAX_RUTA], MetaArchivo *metadatos, int cantida
 
     fclose(archivo_salida);
 
-    // Eliminar frecuencias
-    /*if (remove("frecuencias.hufftmp") != 0)
-    {
-        perror("Error al eliminar frecuencias.hufftmp");
-    }*/
+    
 }
+
+//Dado un archivo.huff, anexa la metadata de los demas archivos a este
 void annadir_metadata_al_huff(const char *nombre_archivo, Ruta *rutas, int num_rutas, MetaArchivo *metadatos, int total_archivos)
 {
     FILE *f = fopen(nombre_archivo, "ab"); // Abrir en modo append binario
@@ -469,7 +472,7 @@ void compress_directory_con_fork(const char *ruta_directorio)
     // Se cuentan las frecuencias y se guardan en un archivo.temp
 
     // Saber cuantos archivos hay en el directorio
-    // CONSIDERAR SI CUENTA SUBARCHIVOS
+    
 
     struct dirent **archivos = NULL;
     int cantidad = scandir(ruta_directorio, &archivos, NULL, alphasort);
@@ -535,7 +538,7 @@ void compress_directory_con_fork(const char *ruta_directorio)
     // Ordenar los metadatos por orden alfabecio
     qsort(metadatos, leidos, sizeof(MetaArchivo), comparar_meta_por_nombre);
 
-    // 🟢 Fase 1: reconstruir tabla de códigos y escribirla
+    // reconstruir tabla de códigos y escribirla
     NodoArbol **lista_de_arboles = NULL;
     int num_nodos = 0;
     crear_lista_arboles(frecuencias, &lista_de_arboles, &num_nodos);
