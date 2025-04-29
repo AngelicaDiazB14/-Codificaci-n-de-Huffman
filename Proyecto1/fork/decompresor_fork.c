@@ -358,8 +358,7 @@ void descomprimir_multiples_con_fork(const char *archivo_huff)
 int main(int argc, char *argv[])
 {
 
-    struct timeval start, end;
-    gettimeofday(&start, NULL);
+    
     if (argc < 2)
     {
         fprintf(stderr, "Error: Falta el argumento de archivo huff\nUso: %s <archivoHuff>\n", argv[0]);
@@ -375,14 +374,21 @@ int main(int argc, char *argv[])
     printf("\nDescompresión iniciada por favor espere... \n");
 
     const char *ruta_archivo_huff = argv[1];
+
+    struct timespec inicio, fin;
+    clock_gettime(CLOCK_MONOTONIC, &inicio);
     descomprimir_multiples_con_fork(ruta_archivo_huff);
 
-    gettimeofday(&end, NULL);
-    long seconds = end.tv_sec - start.tv_sec;
-    long microseconds = end.tv_usec - start.tv_usec;
-    double time_taken = seconds * 1000.0 + microseconds / 1000.0; // en milisegundos
+    clock_gettime(CLOCK_MONOTONIC, &fin);
 
-    printf("La ejecucion duro %f milisegundos\n", time_taken);
+    // Calcular la diferencia en nanosegundos
+    long segundos = fin.tv_sec - inicio.tv_sec;
+    long nanosegundos = fin.tv_nsec - inicio.tv_nsec;
+    long long tiempo_total_ns = segundos * 1000000000LL + nanosegundos;
+    double tiempo_total_ms = tiempo_total_ns / 1e6;
+
+    printf("Tiempo tardado: %lld nanosegundos (%.3f milisegundos)\n", tiempo_total_ns, tiempo_total_ms);
+
     return 0;
 
     // Cambiar mallocs a callocs. Cambiar [i].propiedad a arreglo->propiedad

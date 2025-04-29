@@ -632,13 +632,11 @@ int main(int argc, char *argv[])
 
     // Calcular la diferencia en nanosegundos
     long segundos = fin.tv_sec - inicio.tv_sec;
-long nanosegundos = fin.tv_nsec - inicio.tv_nsec;
-long long tiempo_total_ns = segundos * 1000000000LL + nanosegundos;
-double tiempo_total_ms = tiempo_total_ns / 1e6;
+    long nanosegundos = fin.tv_nsec - inicio.tv_nsec;
+    long long tiempo_total_ns = segundos * 1000000000LL + nanosegundos;
+    double tiempo_total_ms = tiempo_total_ns / 1e6;
 
-printf("Tiempo tardado: %lld nanosegundos (%.3f milisegundos)\n", tiempo_total_ns, tiempo_total_ms);
-
-
+    printf("Tiempo tardado: %lld nanosegundos (%.3f milisegundos)\n", tiempo_total_ns, tiempo_total_ms);
 
     return 0;
 }

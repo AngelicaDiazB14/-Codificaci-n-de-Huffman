@@ -637,25 +637,23 @@ int main(int argc, char *argv[])
     printf("\nCompresor con hilos: \n");
     printf("\nCompresión iniciada por favor espere... \n");
     
-    // Variables para medir el tiempo de ejecución
-    struct timeval inicio, fin;
-    // Tomar el tiempo de inicio
-    gettimeofday(&inicio, NULL);
+   
+    
 
-    // Llamar a la función para comprimir el directorio
+    struct timespec inicio, fin;
+    clock_gettime(CLOCK_MONOTONIC, &inicio);
+
     comprimir_directorio(ruta_directorio_limpia);
 
-    // Tomar el tiempo de finalización
-    gettimeofday(&fin, NULL);
-    
-    // Calcular la diferencia de segundos y microsegundos
-    long segundos = fin.tv_sec - inicio.tv_sec;
-    long microsundos = fin.tv_usec - inicio.tv_usec;
-    // Calcular el tiempo total en milisegundos
-    double tiempo_tardado = segundos * 1000.0 + microsundos / 1000.0;
+    clock_gettime(CLOCK_MONOTONIC, &fin);
 
-    // Mostrar en pantalla cuánto tiempo tardó la ejecución
-    printf("La ejecucion duró %f milisegundos\n", tiempo_tardado);
+    // Calcular la diferencia en nanosegundos
+    long segundos = fin.tv_sec - inicio.tv_sec;
+    long nanosegundos = fin.tv_nsec - inicio.tv_nsec;
+    long long tiempo_total_ns = segundos * 1000000000LL + nanosegundos;
+    double tiempo_total_ms = tiempo_total_ns / 1e6;
+
+    printf("Tiempo tardado: %lld nanosegundos (%.3f milisegundos)\n", tiempo_total_ns, tiempo_total_ms);
     
     // Finalizar el programa exitosamente
     return 0;
