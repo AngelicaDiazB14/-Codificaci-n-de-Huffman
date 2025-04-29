@@ -26,7 +26,6 @@ typedef struct {
     long offset;                      // Desplazamiento en el archivo comprimido para comenzar la descompresión
 } DatosHilo;                          // Estructura que contiene los datos necesarios para un hilo de descompresión
 
-
 // =========================================================================
 // Nombre de la función: descomprimir_archivo
 // Encargada de: Descomprimir un archivo utilizando el algoritmo Huffman
@@ -199,19 +198,6 @@ int leer_meta_y_tabla(const char *archivo_meta, Codigo **out_codigos, int *num_c
     return 1;
 }
 
-
-// =========================================================================
-// Nombre de la función: obtener_numero_hilos_max
-// Encargada de: Obtener el número máximo de hilos posibles según los núcleos de la CPU
-// Entradas: Ninguna
-// Salida: El número máximo de hilos disponibles según la cantidad de núcleos del sistema
-// =========================================================================
-int obtener_numero_hilos_max() {
-    // Obtener el número de núcleos disponibles en el sistema
-    int max_hilos = sysconf(_SC_NPROCESSORS_ONLN);
-    return max_hilos; // Retornar el número de núcleos como número de hilos
-}
-
 // =========================================================================
 // Nombre de la función: main
 // Encargada de: Descomprimir archivos utilizando múltiples hilos para procesar los archivos comprimidos.
@@ -219,87 +205,66 @@ int obtener_numero_hilos_max() {
 // Salida: Código de salida (1 si ocurre un error, 0 si termina correctamente)
 // =========================================================================
 
+
 int main(int argc, char *argv[]) {
-    // Variables para medir el tiempo de ejecución
     struct timespec inicio, fin;
     clock_gettime(CLOCK_MONOTONIC, &inicio);
 
-   
-    // Verificar que se haya pasado el número correcto de argumentos
-    if (argc != 2) return 1;  // Si no se pasa el archivo .meta como argumento, termina el programa con código de error 1
+    if (argc != 2) return 1;
 
-    // Punteros a las estructuras donde se guardarán los datos de los códigos y archivos
     Codigo *codigos = NULL;
     MetaArchivo *archivos = NULL;
     int num_codigos = 0, num_archivos = 0;
 
-    // Leer los datos del archivo .meta (estructura de codificación y archivos)
     if (!leer_meta_y_tabla(argv[1], &codigos, &num_codigos, &archivos, &num_archivos)) {
-        return 1;  // Si la lectura falla, termina el programa con código de error 1
+        return 1;
     }
     printf("\n Descompresor con hilos: \n");
     printf("\n Descompresión iniciada por favor espere... \n");
 
-    // Reconstruir el árbol de Huffman a partir de los códigos leídos
     NodoArbolDecompresion *arbol = reconstruirArbol(codigos, num_codigos);
-    free(codigos);  // Liberar la memoria de los códigos ya que ya no son necesarios
+    free(codigos);
 
-    // Preparar el nombre del directorio de salida, usando el nombre del archivo .meta sin la extensión
     char nombre_dir[256];
-    strncpy(nombre_dir, argv[1], sizeof(nombre_dir) - 1);  // Copiar el nombre del archivo .meta
-    char *punto = strrchr(nombre_dir, '.');  // Buscar la última aparición del punto en el nombre del archivo
-    if (punto) *punto = '\0';  // Eliminar la extensión del archivo para usar el nombre base del archivo
+    strncpy(nombre_dir, argv[1], sizeof(nombre_dir) - 1);
+    char *punto = strrchr(nombre_dir, '.');
+    if (punto) *punto = '\0';
 
-    // Crear un directorio para los archivos descomprimidos
     char dir_salida[PATH_MAX];
-    snprintf(dir_salida, sizeof(dir_salida), "%s_descompreso", nombre_dir);  // Crear un nombre para el directorio de salida
-    mkdir(dir_salida, 0777);  // Crear el directorio con permisos 0777 (lectura, escritura y ejecución para todos)
+    snprintf(dir_salida, sizeof(dir_salida), "%s_descompreso", nombre_dir);
+    mkdir(dir_salida, 0777);
 
-    // Determinar el número máximo de hilos disponibles en el sistema
-    int max_hilos = obtener_numero_hilos_max();  // Obtener el número de núcleos del procesador
-    pthread_t hilos[max_hilos];  // Array de identificadores de hilos
-    DatosHilo datos_hilos[max_hilos];  // Array de datos para los hilos (información de cada archivo)
-    int hilos_activos = 0;  // Contador de hilos activos
-    long offset = 0;  // Variable para almacenar el offset de cada archivo comprimido
+    // Crear un array de hilos y datos para todos los archivos
+    pthread_t *hilos = malloc(num_archivos * sizeof(pthread_t));
+    DatosHilo *datos_hilos = malloc(num_archivos * sizeof(DatosHilo));
+    long offset = 0;
 
-    // Iterar sobre todos los archivos para descomprimirlos
+    // Crear un hilo para cada archivo
     for (int i = 0; i < num_archivos; i++) {
-        // Asignar los datos específicos para este hilo (archivo, árbol y meta-información)
-        datos_hilos[hilos_activos] = (DatosHilo){
-            .archivo_huff = argv[1],  // Archivo .meta con la información comprimida
-            .arbol = arbol,  // Árbol de Huffman para la descompresión
-            .meta = archivos[i],  // Información específica del archivo a descomprimir
-            .offset = offset  // Offset del archivo dentro del archivo comprimido
+        datos_hilos[i] = (DatosHilo){
+            .archivo_huff = argv[1],
+            .arbol = arbol,
+            .meta = archivos[i],
+            .offset = offset
         };
-        
-        // Asignar el directorio de salida al hilo
-        strncpy(datos_hilos[hilos_activos].directorio_salida, dir_salida, PATH_MAX - 1);
-        
-        // Actualizar el offset para el siguiente archivo
+        strncpy(datos_hilos[i].directorio_salida, dir_salida, PATH_MAX - 1);
         offset += archivos[i].tam_comprimido;
 
-        // Crear un hilo para descomprimir el archivo
-        pthread_create(&hilos[hilos_activos], NULL, descomprimir_archivo, &datos_hilos[hilos_activos]);
-        hilos_activos++;  // Incrementar el contador de hilos activos
-
-        // Esperar si hemos alcanzado el máximo número de hilos o si es el último archivo
-        if (hilos_activos == max_hilos || i == num_archivos - 1) {
-            // Esperar a que todos los hilos activos terminen su ejecución
-            for (int j = 0; j < hilos_activos; j++) {
-                pthread_join(hilos[j], NULL);  // Esperar que cada hilo termine
-            }
-            hilos_activos = 0;  // Resetear el contador de hilos activos para el siguiente bloque de hilos
-        }
+        pthread_create(&hilos[i], NULL, descomprimir_archivo, &datos_hilos[i]);
     }
 
-    // Liberar la memoria utilizada para los archivos
-    free(archivos);
+    // Esperar a que todos los hilos terminen
+    for (int i = 0; i < num_archivos; i++) {
+        pthread_join(hilos[i], NULL);
+    }
 
-   
+    // Liberar memoria
+    free(archivos);
+    free(hilos);
+    free(datos_hilos);
 
     clock_gettime(CLOCK_MONOTONIC, &fin);
 
-    // Calcular la diferencia en nanosegundos
     long segundos = fin.tv_sec - inicio.tv_sec;
     long nanosegundos = fin.tv_nsec - inicio.tv_nsec;
     long long tiempo_total_ns = segundos * 1000000000LL + nanosegundos;
@@ -307,5 +272,5 @@ int main(int argc, char *argv[]) {
 
     printf("Tiempo tardado: %lld nanosegundos (%.3f milisegundos)\n", tiempo_total_ns, tiempo_total_ms);
 
-    return 0;  // Retornar 0 al finalizar correctamente
+    return 0;
 }
